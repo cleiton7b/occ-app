@@ -1,3 +1,8 @@
+/**
+ * OCC - Object Control Center
+ * @author Cleiton Otávio de Sousa
+ * @version 1.0.0
+ */
 import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { X, Info, Code, Calendar, ShieldCheck, Box, BookOpen, Building2 } from 'lucide-react';
@@ -130,7 +135,6 @@ export default function AboutModal({ isOpen, onClose }) {
                   </span>
                   <div className="pl-2.5 border-l-2 border-[#e30613] space-y-0.5">
                     <p className="font-medium text-stone-800">Cleiton Otávio de Sousa</p>
-                    <p className="font-medium text-stone-800">Daniel Pestana de Gouveia</p>
                   </div>
                 </div>
               </div>

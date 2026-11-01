@@ -1,3 +1,6 @@
+REM OCC - Object Control Center
+REM @author Cleiton Otávio de Sousa
+REM @version 1.0.0
 @echo off
 title OCC - Object Control Center
 cd /d "%~dp0"

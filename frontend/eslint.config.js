@@ -1,3 +1,8 @@
+/**
+ * OCC - Object Control Center
+ * @author Cleiton Otávio de Sousa
+ * @version 1.0.0
+ */
 import js from '@eslint/js';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';

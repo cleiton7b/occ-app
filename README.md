@@ -131,7 +131,7 @@ VITE_API_BASE_URL=http://localhost:3001
 ## 💻 Executando em Desenvolvimento
 
 ### Opção 1: Inicialização em 1 Clique (Windows)
-Basta dar duplo clique no arquivo [`run.bat`](file:///C:/DEV/repos/cleiton7b-jpg/interface-os-ora-cloud/run.bat) na raiz do projeto (ou executar `.\run.bat` no terminal). Ele irá:
+Basta dar duplo clique no arquivo [`run.bat`](./run.bat) na raiz do projeto (ou executar `.\run.bat` no terminal). Ele irá:
 1. Abrir uma janela dedicada com o **Backend Proxy** (porta 3001 com auto-reload).
 2. Abrir uma janela dedicada com o **Frontend Vite** (porta 5173).
 3. Abrir automaticamente a aplicação no seu navegador padrão (`http://localhost:5173`).

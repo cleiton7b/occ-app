@@ -1,6 +1,7 @@
 {
   "name": "fts-backend",
   "version": "1.0.0",
+  "author": "Cleiton Otávio de Sousa",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

@@ -1,3 +1,8 @@
+/**
+ * OCC - Object Control Center
+ * @author Cleiton Otávio de Sousa
+ * @version 1.0.0
+ */
 import React, { useState } from 'react';
 import { Upload, FileUp } from 'lucide-react';
 import { ftsApi } from '../services/api';

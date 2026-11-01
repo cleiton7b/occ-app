@@ -1,3 +1,8 @@
+/**
+ * OCC - Object Control Center
+ * @author Cleiton Otávio de Sousa
+ * @version 1.0.0
+ */
 import React from 'react';
 import { CheckCircle, AlertCircle, Info } from 'lucide-react';
 import PropTypes from 'prop-types';

@@ -1,3 +1,8 @@
+/**
+ * OCC - Object Control Center
+ * @author Cleiton Otávio de Sousa
+ * @version 1.0.0
+ */
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');

@@ -1,3 +1,8 @@
+/**
+ * OCC - Object Control Center
+ * @author Cleiton Otávio de Sousa
+ * @version 1.0.0
+ */
 import React, { useState, useMemo } from 'react';
 import { Trash2, RefreshCw, Search, ArrowUpDown, FileText, Database } from 'lucide-react';
 import { ftsApi } from '../services/api';
