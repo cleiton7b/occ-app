@@ -54,3 +54,7 @@ build/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Token cache (contém bearer tokens do IDCS — não versionar)
+.token-cache.json
+*/.token-cache.json

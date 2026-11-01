@@ -108,8 +108,51 @@ const ENVS = loadEnvironments();
 const envKeys = Object.keys(ENVS);
 
 let currentEnv = envKeys.length > 0 ? envKeys[0] : 'STAGE_APCS';
-let cachedToken = null;
-let tokenExpiry = 0;
+
+// Cache de tokens por ambiente (memória + persistência em disco)
+const tokenCache = new Map(); // envKey -> { token, expiry }
+const tokenInflight = new Map(); // envKey -> Promise (refresh em andamento)
+const TOKEN_CACHE_FILE = path.resolve(__dirname, '.token-cache.json');
+
+function loadTokenCacheFromDisk() {
+  try {
+    if (!fs.existsSync(TOKEN_CACHE_FILE)) return;
+    const raw = fs.readFileSync(TOKEN_CACHE_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      for (const [envKey, entry] of Object.entries(parsed)) {
+        if (entry && typeof entry.token === 'string' && typeof entry.expiry === 'number' && entry.expiry > Date.now()) {
+          tokenCache.set(envKey, { token: entry.token, expiry: entry.expiry });
+        }
+      }
+      console.log(`[Auth] Cache de tokens carregado do disco (${tokenCache.size} válido(s))`);
+    }
+  } catch (e) {
+    console.warn('[Auth Warning] Não foi possível carregar cache de tokens:', e.message);
+  }
+}
+
+function persistTokenCache() {
+  try {
+    const obj = {};
+    for (const [envKey, entry] of tokenCache.entries()) {
+      if (entry && entry.expiry > Date.now()) {
+        obj[envKey] = { token: entry.token, expiry: entry.expiry };
+      }
+    }
+    fs.writeFileSync(TOKEN_CACHE_FILE, JSON.stringify(obj), 'utf8');
+  } catch (e) {
+    console.warn('[Auth Warning] Não foi possível persistir cache de tokens:', e.message);
+  }
+}
+
+function invalidateToken(envKey) {
+  tokenCache.delete(envKey);
+  tokenInflight.delete(envKey);
+  persistTokenCache();
+}
+
+loadTokenCacheFromDisk();
 
 console.log('[Env] Ambientes carregados do .env:', envKeys);
 console.log('[Env] Ambiente ativo inicial:', currentEnv);
@@ -123,51 +166,69 @@ function isValidString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-async function getAccessToken() {
-  if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
+async function getAccessToken(envKey = currentEnv) {
+  const cached = tokenCache.get(envKey);
+  if (cached && Date.now() < cached.expiry) return cached.token;
 
-  const config = ENVS[currentEnv];
+  // Reaproveita refresh em andamento para evitar autenticações duplicadas
+  if (tokenInflight.has(envKey)) {
+    return tokenInflight.get(envKey);
+  }
+
+  const config = ENVS[envKey];
   if (!config) {
-    throw new Error(`Ambiente '${currentEnv}' não encontrado nas configurações do .env.`);
+    throw new Error(`Ambiente '${envKey}' não encontrado nas configurações do .env.`);
   }
 
   const requiredFields = ['TENANT', 'BASE_URL', 'IDCS_URL', 'IDCS_CLIENTID', 'IDCS_CLIENTSECRET', 'IDCS_SCOPE'];
   for (const field of requiredFields) {
     if (!config[field]) {
-      throw new Error(`Configuração ausente para o ambiente '${currentEnv}': campo '${field}' não definido.`);
+      throw new Error(`Configuração ausente para o ambiente '${envKey}': campo '${field}' não definido.`);
     }
   }
 
-  console.log(`[Auth] Solicitando token para ambiente: ${currentEnv}`);
+  console.log(`[Auth] Solicitando token para ambiente: ${envKey}`);
   const auth = Buffer.from(`${config.IDCS_CLIENTID}:${config.IDCS_CLIENTSECRET}`).toString('base64');
 
+  const refreshPromise = (async () => {
+    try {
+      const response = await axios.post(config.IDCS_URL,
+        new URLSearchParams({
+          grant_type: 'client_credentials',
+          scope: config.IDCS_SCOPE
+        }),
+        {
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          timeout: 10000
+        }
+      );
+      const token = response.data.access_token;
+      const expiresIn = Number(response.data.expires_in) || 3600;
+      const expiry = Date.now() + (expiresIn * 1000) - 60000;
+      tokenCache.set(envKey, { token, expiry });
+      persistTokenCache();
+      console.log(`[Auth] Token obtido com sucesso para ${envKey} (expira em ${Math.round((expiry - Date.now()) / 1000)}s)`);
+      return token;
+    } catch (error) {
+      const errorMsg = error.response?.data?.error || error.message;
+      console.error(`[Auth Error] Falha no IDCS (${envKey}):`, errorMsg);
+      throw new Error(`Falha na autenticação IDCS (${envKey}): ${errorMsg}`, { cause: error });
+    }
+  })();
+
+  tokenInflight.set(envKey, refreshPromise);
   try {
-    const response = await axios.post(config.IDCS_URL,
-      new URLSearchParams({
-        grant_type: 'client_credentials',
-        scope: config.IDCS_SCOPE
-      }),
-      {
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        timeout: 10000
-      }
-    );
-    cachedToken = response.data.access_token;
-    tokenExpiry = Date.now() + (response.data.expires_in * 1000) - 60000;
-    console.log(`[Auth] Token obtido com sucesso para ${currentEnv}`);
-    return cachedToken;
-  } catch (error) {
-    const errorMsg = error.response?.data?.error || error.message;
-    console.error(`[Auth Error] Falha no IDCS (${currentEnv}):`, errorMsg);
-    throw new Error(`Falha na autenticação IDCS (${currentEnv}): ${errorMsg}`, { cause: error });
+    return await refreshPromise;
+  } finally {
+    tokenInflight.delete(envKey);
   }
 }
 
-async function ftsRequest(method, endpoint, payload = null) {
-  const token = await getAccessToken();
+async function ftsRequest(method, endpoint, payload = null, retried = false) {
+  const token = await getAccessToken(currentEnv);
   const config = ENVS[currentEnv];
   const url = `${config.BASE_URL}/${config.TENANT}/RetailAppsReSTServices/services/private/FTSWrapper/${endpoint}`;
   console.log(`[FTS Request] ${method} ${endpoint} | Env: ${currentEnv}`);
@@ -187,6 +248,12 @@ async function ftsRequest(method, endpoint, payload = null) {
     });
     return response.data;
   } catch (error) {
+    // Token expirado/inválido (401): invalida cache e tenta uma única vez com novo token
+    if (!retried && error.response && error.response.status === 401) {
+      console.warn(`[Auth] Token 401 para ${currentEnv}; renovando e tentando novamente...`);
+      invalidateToken(currentEnv);
+      return ftsRequest(method, endpoint, payload, true);
+    }
     let errorMsg = 'Unknown Error';
     if (error.response) {
       if (typeof error.response.data === 'string') {
@@ -222,8 +289,7 @@ app.post('/set-env', (req, res) => {
 
   if (ENVS[env]) {
     currentEnv = env;
-    cachedToken = null; // Limpa o token para forçar nova autenticação no ambiente selecionado
-    tokenExpiry = 0;
+    // Mantém cache por ambiente; apenas força revalidação se o token estiver expirado
     console.log(`[Env] Ambiente alterado com sucesso para: ${currentEnv}`);
     res.json({ success: true, currentEnv });
   } else {
