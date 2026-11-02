@@ -68,17 +68,17 @@ export default function DeletionView({ prefix, files = [], onDeleted, onRefresh,
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-card border border-stone-200 overflow-hidden">
       {/* Top Header do Card de Exclusão */}
       <div className="p-4 border-b border-stone-200 bg-stone-50 flex flex-wrap justify-between items-center gap-4">
         <div className="flex items-center gap-4 flex-1">
-          <h2 className="font-bold text-[#e30613] flex items-center gap-2 shrink-0 tracking-tight">
+          <h2 className="font-bold text-brand flex items-center gap-2 shrink-0 tracking-tight">
             <Trash2 size={18} /> Selecionar para Exclusão
           </h2>
           <div className="relative flex-1 max-w-xs">
             <Search className="absolute left-3 top-2.5 text-stone-400" size={16} />
             <input
-              className="pl-9 pr-4 py-2 border border-stone-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#e30613] focus:border-[#e30613] bg-white w-full transition"
+              className="pl-9 pr-4 py-2 border border-stone-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand focus:border-brand bg-white w-full transition"
               placeholder="Filtrar arquivos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -86,7 +86,7 @@ export default function DeletionView({ prefix, files = [], onDeleted, onRefresh,
           </div>
           <button
             onClick={onRefresh}
-            className="p-2 hover:bg-stone-200 rounded-full transition text-stone-600 hover:text-[#e30613] shrink-0 cursor-pointer"
+            className="p-2 hover:bg-stone-200 rounded-full transition text-stone-600 hover:text-brand shrink-0 cursor-pointer"
             title="Atualizar Lista"
           >
             <RefreshCw size={16} />
@@ -95,32 +95,32 @@ export default function DeletionView({ prefix, files = [], onDeleted, onRefresh,
         <button
           onClick={handleConfirmDelete}
           disabled={selected.length === 0 || deleting.length > 0}
-          className="bg-[#e30613] text-white px-5 py-2 rounded-lg text-xs font-bold disabled:bg-stone-300 hover:bg-[#be5400] transition shrink-0 cursor-pointer shadow-sm active:scale-95"
+          className="bg-brand text-white px-5 py-2 rounded-lg text-xs font-bold disabled:bg-stone-300 hover:bg-clay transition shrink-0 cursor-pointer shadow-sm active:scale-95"
         >
           Deletar Selecionados ({selected.length})
         </button>
       </div>
 
       {/* Barra de Prefixo Size & Métricas com Paleta Renner */}
-      <div className="px-4 py-3 bg-[#e30613]/5 border-b border-stone-200 flex flex-wrap items-center justify-between gap-3 text-sm">
+      <div className="px-4 py-3 bg-brand/5 border-b border-stone-200 flex flex-wrap items-center justify-between gap-3 text-sm">
         <div className="flex items-center gap-2.5">
-          <Database size={16} className="text-[#e30613]" />
-          <span className="font-bold text-[#1c1c1a]">Prefixo Size:</span>
-          <span className="px-2.5 py-0.5 rounded-full bg-[#1c1c1a] text-white font-mono font-bold text-xs tracking-wide shadow-xs border border-[#d7a17a]/40">
+          <Database size={16} className="text-brand" />
+          <span className="font-bold text-ink">Prefixo Size:</span>
+          <span className="px-2.5 py-0.5 rounded-full bg-ink text-white font-mono font-bold text-xs tracking-wide shadow-2xs border border-sand/40">
             {prefixSizeFormatted} MB
           </span>
           <span className="text-xs text-stone-600 font-medium ml-1">
             ({files.length} {files.length === 1 ? 'arquivo' : 'arquivos'})
           </span>
           {selected.length > 0 && (
-            <span className="ml-2 text-xs font-bold text-[#e30613] bg-[#e30613]/10 px-2.5 py-0.5 rounded-full border border-[#e30613]/30">
+            <span className="ml-2 text-xs font-bold text-brand bg-brand/10 px-2.5 py-0.5 rounded-full border border-brand/30">
               Selecionados: {selected.length} ({selectedSizeFormatted} MB)
             </span>
           )}
         </div>
         {searchTerm && (
           <div className="text-xs text-stone-600 bg-white px-3 py-1 rounded-md border border-stone-200 shadow-2xs font-medium">
-            Exibindo <strong className="text-[#1c1c1a]">{filteredAndSortedFiles.length}</strong> de <strong className="text-[#1c1c1a]">{files.length}</strong> arquivos
+            Exibindo <strong className="text-ink">{filteredAndSortedFiles.length}</strong> de <strong className="text-ink">{files.length}</strong> arquivos
           </div>
         )}
       </div>
@@ -128,12 +128,12 @@ export default function DeletionView({ prefix, files = [], onDeleted, onRefresh,
       {/* Tabela de Arquivos */}
       {error ? (
         <div className="p-6 flex flex-col items-center justify-center text-center gap-3">
-          <AlertCircle size={36} className="text-[#e30613]" />
-          <p className="text-sm font-bold text-[#1c1c1a]">Erro ao carregar arquivos</p>
+          <AlertCircle size={36} className="text-brand" />
+          <p className="text-sm font-bold text-ink">Erro ao carregar arquivos</p>
           <p className="text-xs text-stone-500">{error}</p>
           <button
             onClick={onRefresh}
-            className="px-4 py-2 rounded-lg text-xs font-bold bg-[#e30613] hover:bg-[#be5400] text-white transition cursor-pointer"
+            className="px-4 py-2 rounded-lg text-xs font-bold bg-brand hover:bg-clay text-white transition cursor-pointer"
           >
             Tentar novamente
           </button>
@@ -148,13 +148,13 @@ export default function DeletionView({ prefix, files = [], onDeleted, onRefresh,
                   <input
                     ref={(el) => { if (el) el.indeterminate = selected.length > 0 && selected.length < filteredAndSortedFiles.length; }}
                     type="checkbox"
-                    className="w-4 h-4 rounded accent-[#e30613] cursor-pointer"
+                    className="w-4 h-4 rounded accent-brand cursor-pointer"
                     checked={filteredAndSortedFiles.length > 0 && selected.length === filteredAndSortedFiles.length}
                     onChange={toggleSelectAll}
                     title="Selecionar todos"
                   />
                   <div
-                    className="flex items-center gap-1.5 cursor-pointer hover:text-[#e30613]"
+                    className="flex items-center gap-1.5 cursor-pointer hover:text-brand"
                     onClick={() => handleSort('name')}
                   >
                     Nome <ArrowUpDown size={12} />
@@ -162,13 +162,13 @@ export default function DeletionView({ prefix, files = [], onDeleted, onRefresh,
                 </div>
               </th>
               <th className="p-4 cursor-pointer hover:bg-stone-200/80 transition select-none" onClick={() => handleSort('size')}>
-                <div className="flex items-center gap-1.5 hover:text-[#e30613]">Tamanho <ArrowUpDown size={12} /></div>
+                <div className="flex items-center gap-1.5 hover:text-brand">Tamanho <ArrowUpDown size={12} /></div>
               </th>
               <th className="p-4 cursor-pointer hover:bg-stone-200/80 transition select-none" onClick={() => handleSort('scanStatus')}>
-                <div className="flex items-center gap-1.5 hover:text-[#e30613]">Status Scan <ArrowUpDown size={12} /></div>
+                <div className="flex items-center gap-1.5 hover:text-brand">Status Scan <ArrowUpDown size={12} /></div>
               </th>
               <th className="p-4 cursor-pointer hover:bg-stone-200/80 transition select-none" onClick={() => handleSort('modified')}>
-                <div className="flex items-center gap-1.5 hover:text-[#e30613]">Data <ArrowUpDown size={12} /></div>
+                <div className="flex items-center gap-1.5 hover:text-brand">Data <ArrowUpDown size={12} /></div>
               </th>
             </tr>
           </thead>
@@ -182,26 +182,26 @@ export default function DeletionView({ prefix, files = [], onDeleted, onRefresh,
                   deleting.includes(f.name)
                     ? 'bg-red-100/60'
                     : selected.includes(f.name)
-                    ? 'bg-[#e30613]/5'
-                    : 'hover:bg-[#d7a17a]/10'
+                    ? 'bg-brand/5'
+                    : 'hover:bg-sand/10'
                 }`}
               >
                 <td className="p-4">
                   <div className="flex items-center gap-3">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 rounded accent-[#e30613] cursor-pointer"
+                      className="w-4 h-4 rounded accent-brand cursor-pointer"
                       checked={selected.includes(f.name)}
                       onChange={() => toggleFile(f.name)}
                     />
                     <div className="flex items-center gap-2">
-                      <FileText size={16} className={selected.includes(f.name) ? 'text-[#e30613]' : 'text-stone-400'} />
+                      <FileText size={16} className={selected.includes(f.name) ? 'text-brand' : 'text-stone-400'} />
                       <span className={`font-medium text-xs ${
                         deleting.includes(f.name) || selected.includes(f.name)
-                          ? 'line-through text-[#e30613] font-semibold'
-                          : 'text-[#1c1c1a]'
+                          ? 'line-through text-brand font-semibold'
+                          : 'text-ink'
                       }`}>
-                        {f.name} {deleting.includes(f.name) && <span className="text-[10px] italic ml-2 text-[#be5400]">(Removendo...)</span>}
+                        {f.name} {deleting.includes(f.name) && <span className="text-[10px] italic ml-2 text-clay">(Removendo...)</span>}
                       </span>
                     </div>
                   </div>
@@ -211,10 +211,10 @@ export default function DeletionView({ prefix, files = [], onDeleted, onRefresh,
                   <span
                     className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
                       f.scanStatus === 'Passed'
-                        ? 'bg-[#487a7b]/15 text-[#487a7b] border-[#487a7b]/30'
+                        ? 'bg-sea/15 text-sea border-sea/30'
                         : f.scanStatus === 'Failed'
-                        ? 'bg-[#e30613]/15 text-[#e30613] border-[#e30613]/30'
-                        : 'bg-[#be5400]/15 text-[#be5400] border-[#be5400]/30'
+                        ? 'bg-brand/15 text-brand border-brand/30'
+                        : 'bg-clay/15 text-clay border-clay/30'
                     }`}
                   >
                     {f.scanStatus}

@@ -56,26 +56,26 @@ export default function UploadView({ prefix, onUploadSuccess }) {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`max-w-2xl mx-auto mt-10 p-12 border-2 border-dashed rounded-3xl bg-white text-center transition-all duration-200 group shadow-sm ${
+      className={`max-w-2xl mx-auto mt-10 p-12 border-2 border-dashed rounded-3xl bg-white text-center transition-all duration-200 group shadow-card ${
         isDragging
-          ? 'border-[#e30613] bg-[#e30613]/5 scale-[1.01]'
-          : 'border-stone-300 hover:border-[#e30613]/60'
+          ? 'border-brand bg-brand/5 scale-[1.01]'
+          : 'border-stone-300 hover:border-brand/60'
       }`}
     >
       <div
         className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 transition-transform duration-200 ${
-          isDragging ? 'bg-[#e30613] text-white scale-110' : 'bg-[#e30613]/10 text-[#e30613] group-hover:scale-105'
+          isDragging ? 'bg-brand text-white scale-110' : 'bg-brand/10 text-brand group-hover:scale-105'
         }`}
       >
         <Upload size={34} />
       </div>
 
-      <h2 className="text-xl font-bold text-[#1c1c1a] mb-2 tracking-tight">Upload para Oracle Cloud</h2>
+      <h2 className="text-xl font-bold text-ink mb-2 tracking-tight">Upload para Oracle Cloud</h2>
       <p className="text-stone-500 mb-2 text-sm">
         Arraste seu arquivo(s) aqui ou clique para selecionar do computador
       </p>
       <div className="mb-8 inline-block bg-stone-100 border border-stone-200 text-stone-600 px-3 py-1 rounded-full text-xs font-mono">
-        Prefixo de destino: <strong className="text-[#1c1c1a]">{prefix || 'Nenhum'}</strong>
+        Prefixo de destino: <strong className="text-ink">{prefix || 'Nenhum'}</strong>
       </div>
 
       <div>
@@ -83,7 +83,7 @@ export default function UploadView({ prefix, onUploadSuccess }) {
           className={`inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-sm text-white cursor-pointer transition shadow-md ${
             uploading
               ? 'bg-stone-400 cursor-not-allowed'
-              : 'bg-[#e30613] hover:bg-[#be5400] active:scale-95'
+              : 'bg-brand hover:bg-clay active:scale-95'
           }`}
         >
           <FileUp size={18} />

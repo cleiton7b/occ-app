@@ -43,17 +43,17 @@ export default function ConsultationView({ files = [], prefix = '', onRefresh, i
   }, [filteredAndSortedFiles, page]);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-card border border-stone-200 overflow-hidden">
       {/* Top Header do Card de Arquivos */}
       <div className="p-4 border-b border-stone-200 bg-stone-50 flex flex-wrap justify-between items-center gap-3">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#e30613]" />
-            <h2 className="font-bold text-[#1c1c1a] tracking-tight">Arquivos no Prefixo</h2>
+            <span className="w-2.5 h-2.5 rounded-full bg-brand" />
+            <h2 className="font-bold text-ink tracking-tight">Arquivos no Prefixo</h2>
           </div>
           <button
             onClick={onRefresh}
-            className="p-2 hover:bg-stone-200 rounded-full transition text-stone-600 hover:text-[#e30613] cursor-pointer"
+            className="p-2 hover:bg-stone-200 rounded-full transition text-stone-600 hover:text-brand cursor-pointer"
             title="Atualizar lista de arquivos"
           >
             <RefreshCw size={17} className={`transition-transform ${isAutoRefresh ? 'animate-spin' : ''}`} />
@@ -62,7 +62,7 @@ export default function ConsultationView({ files = [], prefix = '', onRefresh, i
         <div className="relative">
           <Search className="absolute left-3 top-2.5 text-stone-400" size={16} />
           <input
-            className="pl-9 pr-4 py-2 border border-stone-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#e30613] focus:border-[#e30613] w-64 bg-white transition"
+            className="pl-9 pr-4 py-2 border border-stone-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand focus:border-brand w-64 bg-white transition"
             placeholder="Filtrar arquivos..."
             value={searchTerm}
             onChange={(e) => {
@@ -74,11 +74,11 @@ export default function ConsultationView({ files = [], prefix = '', onRefresh, i
       </div>
 
       {/* Barra de Prefixo Size & Métricas com Paleta Renner */}
-      <div className="px-4 py-3 bg-[#d7a17a]/15 border-b border-stone-200 flex flex-wrap items-center justify-between gap-3 text-sm">
+      <div className="px-4 py-3 bg-sand/15 border-b border-stone-200 flex flex-wrap items-center justify-between gap-3 text-sm">
         <div className="flex items-center gap-2.5">
-          <Database size={16} className="text-[#e30613]" />
-          <span className="font-bold text-[#1c1c1a]">Prefixo Size:</span>
-          <span className="px-2.5 py-0.5 rounded-full bg-[#1c1c1a] text-white font-mono font-bold text-xs tracking-wide shadow-xs border border-[#d7a17a]/40">
+          <Database size={16} className="text-brand" />
+          <span className="font-bold text-ink">Prefixo Size:</span>
+          <span className="px-2.5 py-0.5 rounded-full bg-ink text-white font-mono font-bold text-xs tracking-wide shadow-2xs border border-sand/40">
             {prefixSizeFormatted} MB
           </span>
           <span className="text-xs text-stone-600 font-medium ml-1">
@@ -87,7 +87,7 @@ export default function ConsultationView({ files = [], prefix = '', onRefresh, i
         </div>
         {searchTerm && (
           <div className="text-xs text-stone-600 bg-white px-3 py-1 rounded-md border border-stone-200 shadow-2xs font-medium">
-            Exibindo <strong className="text-[#1c1c1a]">{filteredAndSortedFiles.length}</strong> de <strong className="text-[#1c1c1a]">{files.length}</strong> arquivos
+            Exibindo <strong className="text-ink">{filteredAndSortedFiles.length}</strong> de <strong className="text-ink">{files.length}</strong> arquivos
           </div>
         )}
       </div>
@@ -95,12 +95,12 @@ export default function ConsultationView({ files = [], prefix = '', onRefresh, i
       {/* Tabela de Arquivos */}
       {error ? (
         <div className="p-6 flex flex-col items-center justify-center text-center gap-3">
-          <AlertCircle size={36} className="text-[#e30613]" />
-          <p className="text-sm font-bold text-[#1c1c1a]">Erro ao carregar arquivos</p>
+          <AlertCircle size={36} className="text-brand" />
+          <p className="text-sm font-bold text-ink">Erro ao carregar arquivos</p>
           <p className="text-xs text-stone-500">{error}</p>
           <button
             onClick={onRefresh}
-            className="px-4 py-2 rounded-lg text-xs font-bold bg-[#e30613] hover:bg-[#be5400] text-white transition cursor-pointer"
+            className="px-4 py-2 rounded-lg text-xs font-bold bg-brand hover:bg-clay text-white transition cursor-pointer"
           >
             Tentar novamente
           </button>
@@ -111,16 +111,16 @@ export default function ConsultationView({ files = [], prefix = '', onRefresh, i
           <thead className="bg-stone-100 text-stone-700 uppercase text-xs font-bold border-b border-stone-200">
             <tr>
               <th className="p-4 cursor-pointer hover:bg-stone-200/80 transition select-none" onClick={() => handleSort('name')}>
-                <div className="flex items-center gap-1.5 hover:text-[#e30613]">Nome <ArrowUpDown size={12} /></div>
+                <div className="flex items-center gap-1.5 hover:text-brand">Nome <ArrowUpDown size={12} /></div>
               </th>
               <th className="p-4 cursor-pointer hover:bg-stone-200/80 transition select-none" onClick={() => handleSort('size')}>
-                <div className="flex items-center gap-1.5 hover:text-[#e30613]">Tamanho <ArrowUpDown size={12} /></div>
+                <div className="flex items-center gap-1.5 hover:text-brand">Tamanho <ArrowUpDown size={12} /></div>
               </th>
               <th className="p-4 cursor-pointer hover:bg-stone-200/80 transition select-none" onClick={() => handleSort('scanStatus')}>
-                <div className="flex items-center gap-1.5 hover:text-[#e30613]">Status Scan <ArrowUpDown size={12} /></div>
+                <div className="flex items-center gap-1.5 hover:text-brand">Status Scan <ArrowUpDown size={12} /></div>
               </th>
               <th className="p-4 cursor-pointer hover:bg-stone-200/80 transition select-none" onClick={() => handleSort('modified')}>
-                <div className="flex items-center gap-1.5 hover:text-[#e30613]">Data <ArrowUpDown size={12} /></div>
+                <div className="flex items-center gap-1.5 hover:text-brand">Data <ArrowUpDown size={12} /></div>
               </th>
               <th className="p-4 text-center">Ação</th>
             </tr>
@@ -134,22 +134,22 @@ export default function ConsultationView({ files = [], prefix = '', onRefresh, i
                 className={`transition cursor-default ${
                   deletedFiles.includes(f.name)
                     ? 'bg-red-50/70'
-                    : 'hover:bg-[#d7a17a]/10'
+                    : 'hover:bg-sand/10'
                 }`}
               >
-                <td className="p-4 flex items-center gap-2 font-medium text-[#1c1c1a]">
-                  <FileText size={16} className={deletedFiles.includes(f.name) ? 'text-[#e30613]' : 'text-stone-400'} />
-                  <span className={deletedFiles.includes(f.name) ? 'text-[#e30613] line-through' : ''}>{f.name}</span>
+                <td className="p-4 flex items-center gap-2 font-medium text-ink">
+                  <FileText size={16} className={deletedFiles.includes(f.name) ? 'text-brand' : 'text-stone-400'} />
+                  <span className={deletedFiles.includes(f.name) ? 'text-brand line-through' : ''}>{f.name}</span>
                 </td>
                 <td className="p-4 text-stone-600 font-mono text-xs">{formatFileSizeMB(f.size)} MB</td>
                 <td className="p-4">
                   <span
                     className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
                       f.scanStatus === 'Passed'
-                        ? 'bg-[#487a7b]/15 text-[#487a7b] border-[#487a7b]/30'
+                        ? 'bg-sea/15 text-sea border-sea/30'
                         : f.scanStatus === 'Failed'
-                        ? 'bg-[#e30613]/15 text-[#e30613] border-[#e30613]/30'
-                        : 'bg-[#be5400]/15 text-[#be5400] border-[#be5400]/30'
+                        ? 'bg-brand/15 text-brand border-brand/30'
+                        : 'bg-clay/15 text-clay border-clay/30'
                     }`}
                   >
                     {f.scanStatus}
@@ -159,7 +159,7 @@ export default function ConsultationView({ files = [], prefix = '', onRefresh, i
                 <td className="p-4 text-center">
                   <button
                     onClick={() => ftsApi.downloadFile(prefix, f.name).catch(e => showToast(e.message, 'error'))}
-                    className="p-2 text-stone-600 hover:text-[#e30613] hover:bg-[#e30613]/10 rounded-full transition cursor-pointer"
+                    className="p-2 text-stone-600 hover:text-brand hover:bg-brand/10 rounded-full transition cursor-pointer"
                     title="Baixar Arquivo"
                   >
                     <Download size={16} />
@@ -171,7 +171,6 @@ export default function ConsultationView({ files = [], prefix = '', onRefresh, i
         </table>
       </div>
       )}
-
       {/* Paginação */}
       {filteredAndSortedFiles.length > PAGE_SIZE && (
         <div className="p-4 border-t border-stone-200 flex items-center justify-between">
@@ -189,7 +188,7 @@ export default function ConsultationView({ files = [], prefix = '', onRefresh, i
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={page >= Math.ceil(filteredAndSortedFiles.length / PAGE_SIZE)}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#e30613] text-white border border-[#e30613] hover:bg-[#be5400] disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-brand text-white border border-brand hover:bg-clay disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
             >
               Próxima
             </button>

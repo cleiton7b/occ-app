@@ -4,7 +4,7 @@
  * @version 1.0.0
  */
 import React from 'react';
-import { CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 const ToastContext = React.createContext(null);
@@ -23,29 +23,34 @@ export function ToastProvider({ children }) {
   };
 
   const icons = {
-    success: <CheckCircle size={18} className="text-[#487a7b] shrink-0" />,
-    error: <AlertCircle size={18} className="text-[#e30613] shrink-0" />,
-    info: <Info size={18} className="text-[#be5400] shrink-0" />,
+    success: <CheckCircle size={18} className="text-sea shrink-0" />,
+    error: <AlertCircle size={18} className="text-brand shrink-0" />,
+    info: <Info size={18} className="text-clay shrink-0" />,
+  };
+
+  const styles = {
+    success: 'border-sea/30 bg-sea/5',
+    error: 'border-brand/30 bg-brand/5',
+    info: 'border-clay/30 bg-clay/5',
   };
 
   return (
     <ToastContext.Provider value={{ showToast, dismiss }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full px-4">
+      <div className="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 max-w-sm">
         {toasts.map((t) => (
           <div
             key={t.id}
-            className="bg-white border border-stone-200 border-l-4 rounded-lg shadow-lg p-3 flex items-start gap-2 text-sm text-[#1c1c1a]"
-            style={{ borderLeftColor: t.type === 'error' ? '#e30613' : t.type === 'info' ? '#be5400' : '#487a7b' }}
+            className={`flex items-start gap-3 px-4 py-3 rounded-xl border shadow-lift bg-white ${styles[t.type] || styles.info} animate-rise-in`}
           >
-            <div className="mt-0.5">{icons[t.type] || icons.info}</div>
-            <p className="flex-1 font-medium">{t.message}</p>
+            {icons[t.type] || icons.info}
+            <p className="text-sm text-ink font-medium flex-1">{t.message}</p>
             <button
               onClick={() => dismiss(t.id)}
-              className="text-stone-400 hover:text-stone-700 cursor-pointer text-lg leading-none"
-              title="Fechar"
+              className="text-stone-400 hover:text-ink transition cursor-pointer"
+              aria-label="Fechar notificação"
             >
-              ×
+              <X size={16} />
             </button>
           </div>
         ))}
@@ -54,12 +59,12 @@ export function ToastProvider({ children }) {
   );
 }
 
-ToastProvider.propTypes = {
-  children: PropTypes.node.isRequired,
-};
-
 export function useToast() {
   const ctx = React.useContext(ToastContext);
-  if (!ctx) throw new Error('useToast deve ser usado dentro de <ToastProvider>');
+  if (!ctx) throw new Error('useToast must be used within ToastProvider');
   return ctx;
 }
+
+ToastProvider.propTypes = {
+  children: PropTypes.node,
+};
