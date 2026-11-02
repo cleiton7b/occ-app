@@ -3,7 +3,7 @@
  * @author Cleiton Otávio de Sousa
  * @version 1.0.0
  */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Search,
   Upload,
@@ -41,38 +41,16 @@ export default function App() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const abortRef = useRef(null);
 
-  const loadInitialData = async () => {
-    setLoading(true);
-    setConnectivity({ status: 'Checking...', color: 'text-stone-400' });
-    try {
-      // 1. Busca dinamicamente os ambientes disponíveis no backend (.env)
-      const envData = await ftsApi.getEnvironments();
-      const envList = Array.isArray(envData) ? envData : (envData.environments || []);
-      setAvailableEnvs(envList);
-
-      const initialEnv = envList.length > 0 ? envList[0] : 'STAGE_APCS';
-      setCurrentEnv(initialEnv);
-
-      // 2. Aplica o ambiente e carrega prefixos e arquivos automaticamente
-      await handleEnvChange(initialEnv);
-    } catch (e) {
-      console.error('[Load Error]', e);
-      setConnectivity({ status: 'Failure', color: 'text-[#e30613]' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkConnectivity = async () => {
+  const checkConnectivity = useCallback(async () => {
     try {
       const ok = await ftsApi.checkPing();
       setConnectivity({ status: ok ? 'Success' : 'Failure', color: ok ? 'text-[#487a7b]' : 'text-[#e30613]' });
     } catch {
       setConnectivity({ status: 'Failure', color: 'text-[#e30613]' });
     }
-  };
+  }, []);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     if (!prefix) return;
     // Cancela qualquer refresh anterior ainda em andamento
     abortRef.current?.abort();
@@ -93,9 +71,9 @@ export default function App() {
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
-  };
+  }, [prefix]);
 
-  const handlePrefixChange = async (newPrefix) => {
+  const handlePrefixChange = useCallback(async (newPrefix) => {
     setPrefix(newPrefix);
     setDeletedFiles([]);
 
@@ -121,10 +99,10 @@ export default function App() {
     } else {
       setFiles([]);
     }
-  };
+  }, []);
 
   // Troca de ambiente com REFRESH AUTOMÁTICO garantido sem precisar clicar em botão
-  const handleEnvChange = async (newEnv) => {
+  const handleEnvChange = useCallback(async (newEnv) => {
     if (!newEnv) return;
     const controller = new AbortController();
     abortRef.current = controller;
@@ -177,20 +155,42 @@ export default function App() {
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
-  };
+  }, [checkConnectivity, prefix]);
 
-  const handleEnvRefresh = async () => {
+  const handleEnvRefresh = useCallback(async () => {
     await handleEnvChange(currentEnv);
-  };
+  }, [handleEnvChange, currentEnv]);
 
-  const handleOnDeleted = (filenames) => {
+  const handleOnDeleted = useCallback((filenames) => {
     setDeletedFiles(filenames);
     setTimeout(() => {
       handleRefresh();
     }, 500);
-  };
+  }, [handleRefresh]);
 
   // Carregamento inicial de ambientes ao abrir a aplicação
+  const loadInitialData = useCallback(async () => {
+    setLoading(true);
+    setConnectivity({ status: 'Checking...', color: 'text-stone-400' });
+    try {
+      // 1. Busca dinamicamente os ambientes disponíveis no backend (.env)
+      const envData = await ftsApi.getEnvironments();
+      const envList = Array.isArray(envData) ? envData : (envData.environments || []);
+      setAvailableEnvs(envList);
+
+      const initialEnv = envList.length > 0 ? envList[0] : 'STAGE_APCS';
+      setCurrentEnv(initialEnv);
+
+      // 2. Aplica o ambiente e carrega prefixos e arquivos automaticamente
+      await handleEnvChange(initialEnv);
+    } catch (e) {
+      console.error('[Load Error]', e);
+      setConnectivity({ status: 'Failure', color: 'text-[#e30613]' });
+    } finally {
+      setLoading(false);
+    }
+  }, [handleEnvChange]);
+
   const initialLoadRef = useRef(null);
   useEffect(() => {
     initialLoadRef.current = loadInitialData;
