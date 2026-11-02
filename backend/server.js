@@ -12,7 +12,14 @@ const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+const dotenv = require('dotenv');
+const dotenvCandidates = [
+  path.resolve(path.dirname(process.execPath), '.env'),
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(__dirname, '.env'),
+];
+const dotenvPath = dotenvCandidates.find((p) => fs.existsSync(p));
+if (dotenvPath) dotenv.config({ path: dotenvPath });
 
 const app = express();
 
@@ -136,6 +143,38 @@ function loadEnvironments() {
 // Carrega os ambientes
 const ENVS = loadEnvironments();
 const envKeys = Object.keys(ENVS);
+
+// Resolve CA corporativa (Netskope/ZTNA) para evitar SELF_SIGNED_CERT_IN_CHAIN em máquinas corporativas
+function resolveCorporateCa() {
+  // 1. Variável de ambiente já definida pelo usuário/sistema
+  if (process.env.NODE_EXTRA_CA_CERTS && fs.existsSync(process.env.NODE_EXTRA_CA_CERTS)) {
+    return process.env.NODE_EXTRA_CA_CERTS;
+  }
+  // 2. Caminho informado via .env (CA_CERT_PATH)
+  if (process.env.CA_CERT_PATH && fs.existsSync(process.env.CA_CERT_PATH)) {
+    return process.env.CA_CERT_PATH;
+  }
+  // 3. Arquivos ao lado do executável / script
+  const baseDirs = [path.dirname(process.execPath), __dirname, process.cwd()];
+  const fileNames = ['netskope-root.cer', 'ca-root.cer', 'ca-corporativa.cer', 'corporate-ca.cer'];
+  for (const dir of baseDirs) {
+    for (const name of fileNames) {
+      const p = path.join(dir, name);
+      if (fs.existsSync(p)) return p;
+    }
+  }
+  // 4. Caminho padrão do guia corporativo
+  const defaultPath = 'C:\\\\temp\\\\netskope-root.cer';
+  if (fs.existsSync(defaultPath)) return defaultPath;
+  return null;
+}
+const corporateCa = resolveCorporateCa();
+if (corporateCa) {
+  process.env.NODE_EXTRA_CA_CERTS = corporateCa;
+  console.log('[TLS] CA corporativa carregada:', corporateCa);
+} else {
+  console.log('[TLS] Nenhuma CA corporativa encontrada. Em rede corporativa (Netskope/ZTNA), exporte caadmin.netskope.com para C:\\\\temp\\\\netskope-root.cer ou coloque netskope-root.cer ao lado do executável.');
+}
 
 let currentEnv = envKeys.length > 0 ? envKeys[0] : 'STAGE_APCS';
 
