@@ -424,15 +424,22 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3001;
-const server = app.listen(PORT, () => {
-  console.log(`Backend Proxy FTS rodando na porta ${PORT}`);
-});
+let server = null;
 
-// Graceful shutdown
-const shutdown = (signal) => {
-  console.log(`[Shutdown] Recebido sinal ${signal}. Encerrando...`);
-  server.close(() => process.exit(0));
-  setTimeout(() => process.exit(1), 10000).unref();
-};
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+// Só inicia o servidor quando executado diretamente (permite import da app para testes)
+if (require.main === module) {
+  server = app.listen(PORT, () => {
+    console.log(`Backend Proxy FTS rodando na porta ${PORT}`);
+  });
+
+  // Graceful shutdown
+  const shutdown = (signal) => {
+    console.log(`[Shutdown] Recebido sinal ${signal}. Encerrando...`);
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(1), 10000).unref();
+  };
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+}
+
+module.exports = app;

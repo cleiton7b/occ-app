@@ -19,6 +19,7 @@ jobs:
       - run: npm install --prefix backend
       - run: npm run lint --prefix backend
       - run: node --check backend/server.js
+      - run: npm test --prefix backend
       - name: Backend health smoke test
         run: |
           npm run start --prefix backend > /tmp/backend.log 2>&1 &
