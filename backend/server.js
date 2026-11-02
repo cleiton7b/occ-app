@@ -15,6 +15,9 @@ require('dotenv').config();
 
 const app = express();
 
+// Confia em proxy reverso para rate-limit e logs corretos de IP
+app.set('trust proxy', 1);
+
 // Segurança headers e compressão de respostas
 app.use(helmet());
 app.use(compression());
@@ -416,7 +419,7 @@ app.use((err, req, res, next) => {
   if (status >= 500) {
     res.status(500).json({ error: 'Erro interno do servidor' });
   } else {
-    res.status(status).json({ error: err.message || 'Erro na requisição' });
+    res.status(status).json({ error: 'Erro na requisição' });
   }
 });
 
