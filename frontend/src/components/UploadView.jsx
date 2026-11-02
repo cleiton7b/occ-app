@@ -31,6 +31,7 @@ export default function UploadView({ prefix, onUploadSuccess }) {
 
   const handleUpload = (e) => {
     const files = Array.from(e.target.files || []);
+    e.target.value = null;
     if (files.length > 0) processFiles(files);
   };
 

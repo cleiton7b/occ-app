@@ -44,8 +44,17 @@ export const ftsApi = {
       body: JSON.stringify({ prefix, filename: file.name }),
       signal
     });
+    if (!res.ok) {
+      let errorMsg = 'Falha no upload';
+      try {
+        const data = await res.json();
+        errorMsg = data.error || data.message || errorMsg;
+      } catch { /* corpo não JSON */ }
+      throw new Error(errorMsg);
+    }
     const { accessUri } = await res.json();
-    await fetch(accessUri, { method: 'PUT', body: file, signal });
+    const fileRes = await fetch(accessUri, { method: 'PUT', body: file, signal });
+    if (!fileRes.ok) throw new Error('Falha ao enviar arquivo para o storage Oracle');
     return { success: true };
   },
   async deleteFiles(prefix, filenames, signal) {
@@ -76,7 +85,7 @@ export const ftsApi = {
     a.download = filename;
     document.body.appendChild(a);
     a.click();
-    window.URL.revokeObjectURL(url);
+    setTimeout(() => window.URL.revokeObjectURL(url), 1000);
     a.remove();
   },
   async checkPing(signal) {

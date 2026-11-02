@@ -35,6 +35,7 @@ export default function App() {
   const [refreshInterval, setRefreshInterval] = useState(60000); // 60s padrão
   const [connectivity, setConnectivity] = useState({ status: 'Checking...', color: 'text-stone-400' });
   const [deletedFiles, setDeletedFiles] = useState([]);
+  const [listError, setListError] = useState(null);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
@@ -83,8 +84,12 @@ export default function App() {
       if (controller.signal.aborted) return;
       setFiles(data || []);
       setDeletedFiles([]);
+      setListError(null);
     } catch (e) {
-      if (e.name !== 'AbortError') console.error('[Refresh Error]', e);
+      if (e.name !== 'AbortError') {
+        console.error('[Refresh Error]', e);
+        setListError(e.message);
+      }
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
@@ -104,8 +109,12 @@ export default function App() {
         const data = await ftsApi.listFiles(newPrefix, controller.signal);
         if (controller.signal.aborted) return;
         setFiles(data || []);
+        setListError(null);
       } catch (e) {
-        if (e.name !== 'AbortError') console.error(e);
+        if (e.name !== 'AbortError') {
+          console.error(e);
+          setListError(e.message);
+        }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -153,14 +162,17 @@ export default function App() {
         const fileList = await ftsApi.listFiles(nextPrefix, controller.signal);
         if (controller.signal.aborted) return;
         setFiles(fileList || []);
+        setListError(null);
       } else {
         setFiles([]);
+        setListError(null);
       }
     } catch (e) {
       if (e.name !== 'AbortError') {
         console.error('[Env Change Error]', e);
         setConnectivity({ status: 'Failure', color: 'text-[#e30613]' });
         setFiles([]);
+        setListError(e.message);
       }
     } finally {
       if (!controller.signal.aborted) setLoading(false);
@@ -179,18 +191,26 @@ export default function App() {
   };
 
   // Carregamento inicial de ambientes ao abrir a aplicação
+  const initialLoadRef = useRef(null);
   useEffect(() => {
-    loadInitialData();
+    initialLoadRef.current = loadInitialData;
+  }, [loadInitialData]);
+  useEffect(() => {
+    initialLoadRef.current?.();
   }, []);
 
   // Cleanup: aborta requisições em andamento ao desmontar a aplicação
   useEffect(() => () => abortRef.current?.abort(), []);
 
   // Intervalo de Auto-Refresh
+  const refreshRef = useRef(handleRefresh);
+  useEffect(() => {
+    refreshRef.current = handleRefresh;
+  }, [handleRefresh]);
   useEffect(() => {
     let interval;
     if (autoRefresh && prefix) {
-      interval = setInterval(() => handleRefresh(), refreshInterval);
+      interval = setInterval(() => refreshRef.current(), refreshInterval);
     }
     return () => clearInterval(interval);
   }, [autoRefresh, prefix, refreshInterval]);
@@ -297,8 +317,9 @@ export default function App() {
             {/* Picklist de Ambiente Dinâmico no Header */}
             <div className="flex items-center gap-2 bg-stone-50 border border-stone-300 rounded-lg px-3 py-1.5 shadow-2xs">
               <Server size={15} className="text-[#e30613]" />
-              <label className="text-xs font-extrabold text-stone-600 uppercase tracking-wider">Ambiente:</label>
+              <label htmlFor="env-select" className="text-xs font-extrabold text-stone-600 uppercase tracking-wider">Ambiente:</label>
               <select
+                id="env-select"
                 value={currentEnv}
                 onChange={(e) => handleEnvChange(e.target.value)}
                 className="bg-transparent text-sm font-bold text-[#1c1c1a] outline-none cursor-pointer"
@@ -311,8 +332,9 @@ export default function App() {
 
             {/* Seletor de Prefixo Cloud */}
             <div className="flex items-center gap-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-stone-600">Prefixo Cloud:</label>
+              <label htmlFor="prefix-select" className="text-xs font-bold uppercase tracking-wider text-stone-600">Prefixo Cloud:</label>
               <select
+                id="prefix-select"
                 value={prefix}
                 onChange={(e) => handlePrefixChange(e.target.value)}
                 className="border border-stone-300 rounded-lg px-3 py-1.5 text-sm bg-stone-50 text-[#1c1c1a] font-medium outline-none focus:ring-2 focus:ring-[#e30613] focus:border-[#e30613] cursor-pointer transition"
@@ -388,10 +410,11 @@ export default function App() {
                     onRefresh={handleRefresh}
                     isAutoRefresh={autoRefresh}
                     deletedFiles={deletedFiles}
+                    error={listError}
                   />
                 )}
                 {view === 'upload' && <UploadView prefix={prefix} onUploadSuccess={handleRefresh} />}
-                {view === 'delete' && <DeletionView prefix={prefix} files={files} onDeleted={handleOnDeleted} onRefresh={handleRefresh} />}
+                {view === 'delete' && <DeletionView prefix={prefix} files={files} onDeleted={handleOnDeleted} onRefresh={handleRefresh} error={listError} />}
               </div>
             )}
           </section>

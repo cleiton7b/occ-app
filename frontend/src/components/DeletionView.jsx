@@ -4,12 +4,13 @@
  * @version 1.0.0
  */
 import React, { useState, useMemo } from 'react';
-import { Trash2, RefreshCw, Search, ArrowUpDown, FileText, Database } from 'lucide-react';
+import { Trash2, RefreshCw, Search, ArrowUpDown, FileText, Database, AlertCircle } from 'lucide-react';
 import { ftsApi } from '../services/api';
 import { useToast } from './Toast';
+import { processFiles, formatFileSizeMB, sumFileSizes, getNextSortConfig } from '../utils/fileList';
 import PropTypes from 'prop-types';
 
-export default function DeletionView({ prefix, files = [], onDeleted, onRefresh }) {
+export default function DeletionView({ prefix, files = [], onDeleted, onRefresh, error = null }) {
   const { showToast } = useToast();
   const [selected, setSelected] = useState([]);
   const [deleting, setDeleting] = useState([]);
@@ -17,27 +18,17 @@ export default function DeletionView({ prefix, files = [], onDeleted, onRefresh 
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
 
   // Calcula a soma total do volume dos arquivos no prefixo atual
-  const totalSizeBytes = useMemo(() => {
-    return (files || []).reduce((acc, f) => acc + (Number(f.size) || 0), 0);
-  }, [files]);
+  const totalSizeBytes = useMemo(() => sumFileSizes(files), [files]);
 
   // Converte para MB formatado com vírgula no padrão pt-BR (ex: "0,00 MB")
-  const prefixSizeFormatted = useMemo(() => {
-    const mb = totalSizeBytes / 1048576;
-    return mb.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }, [totalSizeBytes]);
+  const prefixSizeFormatted = useMemo(() => formatFileSizeMB(totalSizeBytes), [totalSizeBytes]);
 
   // Calcula a soma do volume dos arquivos selecionados para exclusão
-  const selectedSizeBytes = useMemo(() => {
-    return (files || [])
-      .filter(f => selected.includes(f.name))
-      .reduce((acc, f) => acc + (Number(f.size) || 0), 0);
-  }, [files, selected]);
-
-  const selectedSizeFormatted = useMemo(() => {
-    const mb = selectedSizeBytes / 1048576;
-    return mb.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }, [selectedSizeBytes]);
+  const selectedSizeBytes = useMemo(
+    () => sumFileSizes(files.filter(f => selected.includes(f.name))),
+    [files, selected]
+  );
+  const selectedSizeFormatted = useMemo(() => formatFileSizeMB(selectedSizeBytes), [selectedSizeBytes]);
 
   const toggleFile = (name) => {
     setSelected(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
@@ -52,36 +43,14 @@ export default function DeletionView({ prefix, files = [], onDeleted, onRefresh 
   };
 
   const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
+    const next = getNextSortConfig(sortConfig, key);
+    setSortConfig(next);
   };
 
-  const filteredAndSortedFiles = useMemo(() => {
-    let result = (files || []).filter(f =>
-      f.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    result.sort((a, b) => {
-      let aVal = a[sortConfig.key];
-      let bVal = b[sortConfig.key];
-
-      if (sortConfig.key === 'size') {
-        return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
-      }
-
-      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
-
-      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-
-    return result;
-  }, [files, searchTerm, sortConfig]);
+  const filteredAndSortedFiles = useMemo(
+    () => processFiles(files, searchTerm, sortConfig),
+    [files, searchTerm, sortConfig]
+  );
 
   const handleConfirmDelete = async () => {
     if (!window.confirm(`Deseja realmente deletar ${selected.length} arquivo(s) do prefixo ${prefix}?`)) return;
@@ -125,7 +94,7 @@ export default function DeletionView({ prefix, files = [], onDeleted, onRefresh 
         </div>
         <button
           onClick={handleConfirmDelete}
-          disabled={selected.length === 0}
+          disabled={selected.length === 0 || deleting.length > 0}
           className="bg-[#e30613] text-white px-5 py-2 rounded-lg text-xs font-bold disabled:bg-stone-300 hover:bg-[#be5400] transition shrink-0 cursor-pointer shadow-sm active:scale-95"
         >
           Deletar Selecionados ({selected.length})
@@ -157,13 +126,27 @@ export default function DeletionView({ prefix, files = [], onDeleted, onRefresh 
       </div>
 
       {/* Tabela de Arquivos */}
-      <div className="overflow-x-auto">
+      {error ? (
+        <div className="p-6 flex flex-col items-center justify-center text-center gap-3">
+          <AlertCircle size={36} className="text-[#e30613]" />
+          <p className="text-sm font-bold text-[#1c1c1a]">Erro ao carregar arquivos</p>
+          <p className="text-xs text-stone-500">{error}</p>
+          <button
+            onClick={onRefresh}
+            className="px-4 py-2 rounded-lg text-xs font-bold bg-[#e30613] hover:bg-[#be5400] text-white transition cursor-pointer"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="bg-stone-100 text-stone-700 uppercase text-xs font-bold border-b border-stone-200">
             <tr>
               <th className="p-4 select-none">
                 <div className="flex items-center gap-2">
                   <input
+                    ref={(el) => { if (el) el.indeterminate = selected.length > 0 && selected.length < filteredAndSortedFiles.length; }}
                     type="checkbox"
                     className="w-4 h-4 rounded accent-[#e30613] cursor-pointer"
                     checked={filteredAndSortedFiles.length > 0 && selected.length === filteredAndSortedFiles.length}
@@ -223,7 +206,7 @@ export default function DeletionView({ prefix, files = [], onDeleted, onRefresh 
                     </div>
                   </div>
                 </td>
-                <td className="p-4 text-stone-600 font-mono text-xs">{(f.size / 1048576).toFixed(2)} MB</td>
+                <td className="p-4 text-stone-600 font-mono text-xs">{formatFileSizeMB(f.size)} MB</td>
                 <td className="p-4">
                   <span
                     className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
@@ -243,6 +226,7 @@ export default function DeletionView({ prefix, files = [], onDeleted, onRefresh 
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }
@@ -252,4 +236,5 @@ DeletionView.propTypes = {
   files: PropTypes.array,
   onDeleted: PropTypes.func,
   onRefresh: PropTypes.func,
+  error: PropTypes.string,
 };

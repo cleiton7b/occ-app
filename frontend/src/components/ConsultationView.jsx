@@ -4,12 +4,13 @@
  * @version 1.0.0
  */
 import React, { useState, useMemo } from 'react';
-import { RefreshCw, Search, ArrowUpDown, FileText, Download, Database } from 'lucide-react';
+import { RefreshCw, Search, ArrowUpDown, FileText, Download, Database, AlertCircle } from 'lucide-react';
 import { ftsApi } from '../services/api';
 import { useToast } from './Toast';
+import { processFiles, formatFileSizeMB, sumFileSizes, getNextSortConfig } from '../utils/fileList';
 import PropTypes from 'prop-types';
 
-export default function ConsultationView({ files = [], prefix = '', onRefresh, isAutoRefresh, deletedFiles = [] }) {
+export default function ConsultationView({ files = [], prefix = '', onRefresh, isAutoRefresh, deletedFiles = [], error = null }) {
   const { showToast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
@@ -17,51 +18,21 @@ export default function ConsultationView({ files = [], prefix = '', onRefresh, i
   const PAGE_SIZE = 10;
 
   // Calcula a soma total do volume dos arquivos no prefixo atual
-  const totalSizeBytes = useMemo(() => {
-    return (files || []).reduce((acc, f) => acc + (Number(f.size) || 0), 0);
-  }, [files]);
+  const totalSizeBytes = useMemo(() => sumFileSizes(files), [files]);
 
   // Converte para MB formatado com vírgula no padrão pt-BR (ex: "0,00 MB")
-  const prefixSizeFormatted = useMemo(() => {
-    const mb = totalSizeBytes / 1048576;
-    return mb.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }, [totalSizeBytes]);
+  const prefixSizeFormatted = useMemo(() => formatFileSizeMB(totalSizeBytes), [totalSizeBytes]);
 
   const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
+    const next = getNextSortConfig(sortConfig, key);
+    setSortConfig(next);
+    setPage(1);
   };
 
-  const filteredAndSortedFiles = useMemo(() => {
-    // 1. Filtragem (Início, Meio ou Fim)
-    let result = (files || []).filter(f =>
-      f.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // 2. Ordenação (Sort)
-    result.sort((a, b) => {
-      let aVal = a[sortConfig.key];
-      let bVal = b[sortConfig.key];
-
-      // Tratamento para Tamanho (numérico)
-      if (sortConfig.key === 'size') {
-        return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
-      }
-
-      // Tratamento para strings (Nome, Status, Data)
-      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
-
-      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-
-    return result;
-  }, [files, searchTerm, sortConfig]);
+  const filteredAndSortedFiles = useMemo(
+    () => processFiles(files, searchTerm, sortConfig),
+    [files, searchTerm, sortConfig]
+  );
 
   // Paginação client-side da lista filtrada
   const paginatedFiles = useMemo(() => {
@@ -122,7 +93,20 @@ export default function ConsultationView({ files = [], prefix = '', onRefresh, i
       </div>
 
       {/* Tabela de Arquivos */}
-      <div className="overflow-x-auto">
+      {error ? (
+        <div className="p-6 flex flex-col items-center justify-center text-center gap-3">
+          <AlertCircle size={36} className="text-[#e30613]" />
+          <p className="text-sm font-bold text-[#1c1c1a]">Erro ao carregar arquivos</p>
+          <p className="text-xs text-stone-500">{error}</p>
+          <button
+            onClick={onRefresh}
+            className="px-4 py-2 rounded-lg text-xs font-bold bg-[#e30613] hover:bg-[#be5400] text-white transition cursor-pointer"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="bg-stone-100 text-stone-700 uppercase text-xs font-bold border-b border-stone-200">
             <tr>
@@ -157,7 +141,7 @@ export default function ConsultationView({ files = [], prefix = '', onRefresh, i
                   <FileText size={16} className={deletedFiles.includes(f.name) ? 'text-[#e30613]' : 'text-stone-400'} />
                   <span className={deletedFiles.includes(f.name) ? 'text-[#e30613] line-through' : ''}>{f.name}</span>
                 </td>
-                <td className="p-4 text-stone-600 font-mono text-xs">{(f.size / 1048576).toFixed(2)} MB</td>
+                <td className="p-4 text-stone-600 font-mono text-xs">{formatFileSizeMB(f.size)} MB</td>
                 <td className="p-4">
                   <span
                     className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
@@ -186,6 +170,7 @@ export default function ConsultationView({ files = [], prefix = '', onRefresh, i
           </tbody>
         </table>
       </div>
+      )}
 
       {/* Paginação */}
       {filteredAndSortedFiles.length > PAGE_SIZE && (
@@ -221,4 +206,5 @@ ConsultationView.propTypes = {
   onRefresh: PropTypes.func,
   isAutoRefresh: PropTypes.bool,
   deletedFiles: PropTypes.array,
+  error: PropTypes.string,
 };
