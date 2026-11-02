@@ -311,19 +311,7 @@ export default function App() {
                 />
               </div>
             )}
-            {!isSidebarCollapsed && (
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-black tracking-[0.18em] text-white">OCC</p>
-                  <p className="text-[10px] font-medium text-stone-400 truncate">
-                    Object Control Center
-                  </p>
-                </div>
-                <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider bg-brand text-white px-1.5 py-0.5 rounded">
-                  Renner
-                </span>
-              </div>
-            )}
+
           </div>
 
           {/* Links de Navegação */}

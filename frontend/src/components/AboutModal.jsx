@@ -147,11 +147,7 @@ export default function AboutModal({ isOpen, onClose }) {
         </div>
 
         {/* Rodapé do Modal */}
-        <div className="bg-stone-100 border-t border-stone-200 px-6 py-3.5 flex justify-between items-center">
-          <div className="text-[11px] text-stone-500 flex items-center gap-1.5 font-medium">
-            <span className="w-2 h-2 rounded-full bg-brand" />
-            <span>Lojas Renner S/A</span>
-          </div>
+        <div className="bg-stone-100 border-t border-stone-200 px-6 py-3.5 flex justify-end items-center">
           <button
             onClick={onClose}
             className="px-5 py-2 bg-ink hover:bg-brand text-white rounded-lg text-xs font-bold transition shadow-sm cursor-pointer"
