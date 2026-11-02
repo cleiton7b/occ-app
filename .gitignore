@@ -23,6 +23,7 @@ node_modules/
 # Production build outputs
 dist/
 */dist/
+backend/public/
 build/
 */build/
 

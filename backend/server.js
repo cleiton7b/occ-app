@@ -71,7 +71,13 @@ app.use((req, res, next) => {
 
 // Função para ler dinamicamente o arquivo .env e carregar múltiplos ambientes (ENV1, ENV2, ENV3...)
 function loadEnvironments() {
-  const envPath = path.resolve(__dirname, '.env');
+  // Procura o .env ao lado do executável (para o pacote compartilhável) e, em seguida, ao lado do script
+  const candidatePaths = [
+    path.resolve(path.dirname(process.execPath), '.env'),
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(__dirname, '.env'),
+  ];
+  const envPath = candidatePaths.find((p) => fs.existsSync(p)) || candidatePaths[0];
   const envs = {};
 
   if (!fs.existsSync(envPath)) {
@@ -136,7 +142,7 @@ let currentEnv = envKeys.length > 0 ? envKeys[0] : 'STAGE_APCS';
 // Cache de tokens por ambiente (memória + persistência em disco)
 const tokenCache = new Map(); // envKey -> { token, expiry }
 const tokenInflight = new Map(); // envKey -> Promise (refresh em andamento)
-const TOKEN_CACHE_FILE = path.resolve(__dirname, '.token-cache.json');
+const TOKEN_CACHE_FILE = path.resolve(path.dirname(process.execPath), '.token-cache.json');
 
 function loadTokenCacheFromDisk() {
   try {
@@ -437,6 +443,20 @@ app.post('/download', async (req, res) => {
   }
 });
 
+// Servir o frontend (build) quando disponível — permite empacotar front+back em um único executável
+const frontendDist = path.join(__dirname, 'public');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get('*', (req, res) => {
+    const acceptsHtml = (req.headers.accept || '').includes('text/html');
+    const indexPath = path.join(frontendDist, 'index.html');
+    if (acceptsHtml && fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
+    res.status(404).json({ error: 'Rota não encontrada', requestId: req.id });
+  });
+}
+
 // Rota não encontrada
 app.use((req, res) => {
   res.status(404).json({ error: 'Rota não encontrada', requestId: req.id });
@@ -461,6 +481,16 @@ let server = null;
 if (require.main === module) {
   server = app.listen(PORT, () => {
     console.log(`Backend Proxy FTS rodando na porta ${PORT}`);
+    console.log(`Acesse: http://localhost:${PORT}`);
+    // Abre o navegador automaticamente (Windows)
+    if (process.platform === 'win32') {
+      try {
+        const { exec } = require('child_process');
+        exec(`start "" "http://localhost:${PORT}"`);
+      } catch (e) {
+        /* ignore */
+      }
+    }
   });
 
   // Graceful shutdown
