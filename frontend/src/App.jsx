@@ -84,6 +84,8 @@ export default function App() {
     abortRef.current = controller;
     setLoading(true);
     try {
+      // Atualiza também o status de conectividade a cada refresh
+      await checkConnectivity();
       const data = await ftsApi.listFiles(prefix, controller.signal);
       if (controller.signal.aborted) return;
       setFiles(data || []);
@@ -92,12 +94,13 @@ export default function App() {
     } catch (e) {
       if (e.name !== 'AbortError') {
         console.error('[Refresh Error]', e);
+        setConnectivity({ status: 'Failure' });
         setListError(e.message);
       }
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
-  }, [prefix]);
+  }, [prefix, checkConnectivity]);
 
   const handlePrefixChange = useCallback(async (newPrefix) => {
     setPrefix(newPrefix);

@@ -4,10 +4,10 @@
  * @version 1.0.0
  */
 import React from 'react';
-import { Activity, Server, Folder, Wifi, RefreshCw } from 'lucide-react';
+import { Activity, Server, Wifi, RefreshCw } from 'lucide-react';
 import PropTypes from 'prop-types';
 
-export default function EnvironmentPanel({ connectivity, prefix, isCollapsed, currentEnv, availableEnvs = [], onEnvChange, onEnvRefresh }) {
+export default function EnvironmentPanel({ connectivity, isCollapsed, currentEnv, availableEnvs = [], onEnvChange, onEnvRefresh }) {
   if (isCollapsed) return null;
 
   return (
@@ -53,13 +53,7 @@ export default function EnvironmentPanel({ connectivity, prefix, isCollapsed, cu
           </div>
         </div>
 
-        {/* Card Prefixo */}
-        <div className="p-3.5 rounded-xl bg-white border border-stone-200 shadow-2xs">
-          <div className="text-xs text-stone-500 mb-1.5 flex items-center gap-1.5 font-medium">
-            <Folder size={13} className="text-ochre" /> Prefixo ativo
-          </div>
-          <div className="text-sm font-mono font-bold text-ink break-all">{prefix || '—'}</div>
-        </div>
+
       </div>
     </div>
   );

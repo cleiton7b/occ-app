@@ -30,7 +30,18 @@ const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
   .filter(Boolean);
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Permite requisições sem Origin (curl, server-to-server), origin "null" (file://) e origens explicitamente configuradas
+      if (!origin || origin === 'null' || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      // Em desenvolvimento, libera qualquer porta de localhost/127.0.0.1 para evitar bloqueio de CORS
+      if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Origem não permitida pelo CORS'));
+    },
+    credentials: true,
   })
 );
 
