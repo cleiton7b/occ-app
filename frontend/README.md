@@ -17,18 +17,17 @@ A aplicação frontend é construída com:
 
 ### Pré-requisitos
 
-- **Node.js** (v18 ou superior)
+- **Node.js** `^22.12.0` ou `>=24.0.0` (exigido pelo Vite 7)
 - **npm** (v9 ou superior)
 
 ### Instalação
 
 ```bash
 # Instalar dependências (a partir da raiz do monorepo)
-npm run install:all
-
-# Ou dentro de frontend/
 npm install
 ```
+
+O monorepo usa **npm workspaces**: um único `node_modules/` na raiz atende `backend/` e `frontend/`. Não rode `npm install` dentro de `frontend/`.
 
 ### Desenvolvimento
 

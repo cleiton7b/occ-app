@@ -72,11 +72,9 @@ O projeto usa **npm workspaces**. Instale tudo com um único comando, a partir d
 ```bash
 npm install
 ```
-> Atalho equivalente: `npm run install:all`.
-
 Isso cria um único `node_modules/` na raiz, compartilhado por `backend/` e `frontend/`. Não é necessário (nem recomendado) rodar `npm install` dentro de cada pasta.
 
-> **npm 11.19+:** se o `npm install` falhar com `EALLOWSCRIPTS`/`allow-scripts is not allowed in project-scoped installs`, remova a chave `allow-scripts` do seu `~/.npmrc` (ou mova-a para o campo `allowScripts` do `package.json`). Esse erro vem de configuração global, não do projeto.
+> **npm 11.19+:** se o `npm install` falhar com `EALLOWSCRIPTS`/`allow-scripts is not allowed in project-scoped installs`, remova a chave `allow-scripts` do seu `~/.npmrc` (ou mova-a para o campo `allowScripts` do `package.json`). Esse erro vem de configuração global, não do projeto. Rodar `npm install` a partir de outro script npm (ex.: `npm run alguma-coisa`) reproduz o problema mesmo com a configuração corrigida, porque o npm repassa a config como flag ao processo filho.
 
 ### 3. Configuração de Ambiente
 
