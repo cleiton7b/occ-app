@@ -22,8 +22,8 @@ export default function EnvironmentPanel({ connectivity, isCollapsed, currentEnv
             <Wifi size={13} className="text-sea" /> Conectividade
           </div>
           <div className="text-sm font-bold text-ink flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${connectivity?.status === 'online' ? 'bg-sea' : 'bg-brand'}`} />
-            {connectivity?.status === 'online' ? 'Conectado' : 'Sem conexão'}
+            <span className={`w-2 h-2 rounded-full ${connectivity?.status === 'Success' ? 'bg-sea' : 'bg-brand'}`} />
+            {connectivity?.status === 'Success' ? 'Conectado' : 'Sem conexão'}
           </div>
         </div>
 

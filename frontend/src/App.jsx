@@ -503,12 +503,7 @@ export default function App() {
                 </select>
               </div>
 
-              {prefix && (
-                <span className="ml-auto text-[11px] font-medium text-ink-muted">
-                  Prefixo ativo:{' '}
-                  <span className="font-mono font-bold text-ink">{prefix}</span>
-                </span>
-              )}
+
             </div>
           </header>
 
