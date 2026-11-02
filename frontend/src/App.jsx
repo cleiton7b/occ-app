@@ -300,11 +300,11 @@ export default function App() {
             ) : (
               <div className="rounded-xl bg-white p-2.5 shadow-sm">
                 <img
-                  src="/logos-lrsa.jpeg"
+                  src="/logo-renner.png"
                   alt="Lojas Renner S/A"
                   className="w-full h-auto rounded"
-                  width="1720"
-                  height="500"
+                  width="495"
+                  height="137"
                 />
               </div>
             )}

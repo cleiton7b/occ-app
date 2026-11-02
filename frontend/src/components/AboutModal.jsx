@@ -41,7 +41,7 @@ export default function AboutModal({ isOpen, onClose }) {
           <div className="flex items-center gap-4">
             <div className="bg-white rounded-xl px-3 py-2 flex items-center justify-center shadow-card">
               <img
-                src="/logos-lrsa.jpeg"
+                src="/logo-renner.png"
                 alt="Lojas Renner S/A"
                 className="h-8 w-auto object-contain"
               />
