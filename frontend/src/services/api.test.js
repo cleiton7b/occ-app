@@ -62,6 +62,19 @@ describe('ftsApi', () => {
       fetch.mockResolvedValueOnce(jsonResponse({}, { ok: false, status: 500 }));
       await expect(ftsApi.listFiles('P')).rejects.toThrow('Erro ao carregar arquivos');
     });
+
+    it('anexa o requestId do backend à mensagem de erro', async () => {
+      fetch.mockResolvedValueOnce(
+        jsonResponse(
+          { error: 'Falha ao listar os arquivos', requestId: 'req-42' },
+          { ok: false, status: 502 }
+        )
+      );
+
+      await expect(ftsApi.listFiles('P')).rejects.toThrow(
+        'Falha ao listar os arquivos (ref: req-42)'
+      );
+    });
   });
 
   describe('uploadFile', () => {

@@ -169,3 +169,68 @@ cd frontend
 npm run build
 ```
 Os arquivos otimizados serão gerados em `frontend/dist/`.
+
+> **Requisito de Node.js:** o frontend usa Vite 7 / Vitest 5 e exige Node `^22.12.0` ou `>=24.0.0`.
+
+---
+
+## 🚀 Deploy em Produção
+
+### Backend (API Proxy)
+
+1. Instale as dependências de produção e inicie o processo:
+   ```bash
+   npm ci --omit=dev --prefix backend
+   npm start --prefix backend
+   ```
+2. Variáveis de ambiente obrigatórias (via `.env` ou variáveis do orquestrador):
+
+   | Variável | Descrição | Padrão |
+   | --- | --- | --- |
+   | `PORT` | Porta HTTP do proxy | `3001` |
+   | `CORS_ORIGIN` | Origens permitidas, separadas por vírgula | `http://localhost:5173` |
+   | `ENV1`, `ENV2`... | Nome do ambiente Oracle (ex.: `STAGE_APCS`) | — |
+   | `TENANT`, `BASE_URL`, `IDCS_URL`, `IDCS_CLIENTID`, `IDCS_CLIENTSECRET`, `IDCS_SCOPE` | Credenciais e endpoints por ambiente | — |
+
+   Consulte [`backend/.env.example`](./backend/.env.example) para o formato completo.
+
+3. **Healthcheck:** `GET /health` responde `200` com `{ status, service, environment }`. Use-o no orquestrador (Docker, Kubernetes, PM2 etc.).
+4. **Proxy reverso:** publique o backend atrás de HTTPS (Nginx, API Gateway, ALB). O app já define `trust proxy`, então o rate limit e os logs usam o IP real do cliente.
+5. **Rate limit:** 300 requisições por IP a cada 15 minutos. Ajuste em `backend/server.js` se o volume de produção exigir.
+6. **Persistência de token:** o cache fica em `backend/.token-cache.json` (ignorado pelo Git). Em ambientes efêmeros ele é recriado automaticamente; não versione esse arquivo.
+
+### Frontend
+
+1. Gere o build (`frontend/dist/`) e sirva os arquivos estáticos por CDN ou pelo mesmo proxy reverso.
+2. Defina `VITE_API_BASE_URL` **no momento do build** apontando para a URL pública do backend:
+   ```bash
+   VITE_API_BASE_URL=https://api.exemplo.com npm run build:frontend
+   ```
+3. Como o app é uma SPA, configure o servidor para devolver `index.html` em rotas desconhecidas.
+
+### Observabilidade e suporte
+
+- Toda requisição recebe um `X-Request-Id` (reaproveitado do cliente quando enviado, gerado com UUID caso contrário).
+- Falhas de upstream são registradas no log do servidor com esse ID e devolvidas ao cliente como mensagem genérica + `requestId`, sem vazar detalhes internos.
+- Ao abrir um chamado, informe o `requestId` exibido na mensagem de erro para localizar o log correspondente.
+
+### CI
+
+O workflow [`.github/workflows/lint.yml`](./.github/workflows/lint.yml) roda em cada push/PR com Node 22:
+
+1. Lint do backend, checagem de sintaxe e testes (`node --test`).
+2. Smoke test do endpoint `/health`.
+3. Lint, testes (Vitest) e build do frontend.
+4. `npm audit --omit=dev --audit-level=high` em backend e frontend.
+
+Para rodar a mesma verificação localmente:
+```bash
+npm run lint
+npm test
+npm run build:frontend
+```
+
+### Lacunas conhecidas
+
+- **Mover/renomear arquivos:** não há endpoint de *move* no proxy; hoje é necessário baixar e reenviar o arquivo.
+- **Advisories de desenvolvimento:** o `npm audit` completo ainda reporta avisos `minimatch` moderados na cadeia do ESLint. Eles não afetam o runtime e o CI valida apenas dependências de produção.

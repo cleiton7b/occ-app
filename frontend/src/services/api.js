@@ -5,10 +5,30 @@
  */
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
+// Monta o erro a partir da resposta do backend, anexando o ID de correlação
+// (X-Request-Id) para facilitar o rastreio no log do servidor.
+async function buildRequestError(res, fallback) {
+  let message = fallback;
+  try {
+    const data = await res.json();
+    if (data && typeof data.error === 'string' && data.error) {
+      message = data.error;
+    } else if (data && typeof data.message === 'string' && data.message) {
+      message = data.message;
+    }
+    if (data && data.requestId) {
+      message = `${message} (ref: ${data.requestId})`;
+    }
+  } catch {
+    /* corpo não JSON: mantém a mensagem padrão */
+  }
+  return new Error(message);
+}
+
 export const ftsApi = {
   async getEnvironments(signal) {
     const res = await fetch(`${API_BASE}/environments`, { signal });
-    if (!res.ok) throw new Error('Erro ao carregar ambientes');
+    if (!res.ok) throw await buildRequestError(res, 'Erro ao carregar ambientes');
     return res.json();
   },
   async setEnvironment(env, signal) {
@@ -18,17 +38,17 @@ export const ftsApi = {
       body: JSON.stringify({ env }),
       signal
     });
-    if (!res.ok) throw new Error('Erro ao alterar ambiente');
+    if (!res.ok) throw await buildRequestError(res, 'Erro ao alterar ambiente');
     return res.json();
   },
   async getPrefixes(signal) {
     const res = await fetch(`${API_BASE}/prefixes`, { signal });
-    if (!res.ok) throw new Error('Erro ao carregar prefixos');
+    if (!res.ok) throw await buildRequestError(res, 'Erro ao carregar prefixos');
     return res.json();
   },
   async listFiles(prefix, signal) {
     const res = await fetch(`${API_BASE}/files?prefix=${encodeURIComponent(prefix)}`, { signal });
-    if (!res.ok) throw new Error('Erro ao carregar arquivos');
+    if (!res.ok) throw await buildRequestError(res, 'Erro ao carregar arquivos');
     const data = await res.json();
     return (data.resultSet || data.listOfFiles || []).map(f => ({
       name: f.name,
@@ -44,14 +64,7 @@ export const ftsApi = {
       body: JSON.stringify({ prefix, filename: file.name }),
       signal
     });
-    if (!res.ok) {
-      let errorMsg = 'Falha no upload';
-      try {
-        const data = await res.json();
-        errorMsg = data.error || data.message || errorMsg;
-      } catch { /* corpo não JSON */ }
-      throw new Error(errorMsg);
-    }
+    if (!res.ok) throw await buildRequestError(res, 'Falha no upload');
     const { accessUri } = await res.json();
     const fileRes = await fetch(accessUri, { method: 'PUT', body: file, signal });
     if (!fileRes.ok) throw new Error('Falha ao enviar arquivo para o storage Oracle');
@@ -64,7 +77,7 @@ export const ftsApi = {
       body: JSON.stringify({ prefix, filenames }),
       signal
     });
-    if (!res.ok) throw new Error('Falha na deleção na nuvem');
+    if (!res.ok) throw await buildRequestError(res, 'Falha na deleção na nuvem');
     return res.json();
   },
   async downloadFile(prefix, filename, signal) {
@@ -74,7 +87,7 @@ export const ftsApi = {
       body: JSON.stringify({ prefix, filename }),
       signal
     });
-    if (!res.ok) throw new Error('Erro ao solicitar download');
+    if (!res.ok) throw await buildRequestError(res, 'Erro ao solicitar download');
     const { accessUri } = await res.json();
     const fileRes = await fetch(accessUri, { signal });
     if (!fileRes.ok) throw new Error('Erro ao baixar arquivo da Oracle');

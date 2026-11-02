@@ -9,6 +9,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
@@ -44,11 +45,15 @@ app.use(limiter);
 
 app.use(express.json());
 
-// Log simples de requisições
+// Log de requisições com ID de correlação (aceita X-Request-Id do cliente ou gera um novo)
 app.use((req, res, next) => {
+  const incoming = req.get('X-Request-Id');
+  req.id = isValidString(incoming) && incoming.length <= 128 ? incoming.trim() : crypto.randomUUID();
+  res.setHeader('X-Request-Id', req.id);
+
   const start = Date.now();
   res.on('finish', () => {
-    console.log(`[Req] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${Date.now() - start}ms)`);
+    console.log(`[Req] ${req.id} ${req.method} ${req.originalUrl} -> ${res.statusCode} (${Date.now() - start}ms)`);
   });
   next();
 });
@@ -172,6 +177,22 @@ function getRemoteName(filePath) {
 
 function isValidString(value) {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+// Erros de upstream são registrados no servidor e devolvidos de forma genérica,
+// evitando vazar detalhes internos (URLs, tokens, mensagens do provedor) ao cliente.
+function sendUpstreamError(req, res, error, message = 'Falha ao comunicar com o serviço de armazenamento') {
+  console.error(`[Upstream Error] ${req.id} ${req.method} ${req.originalUrl}:`, error?.message || error);
+  res.status(502).json({ error: message, requestId: req.id });
+}
+
+// Valida a resposta do FTS antes de acessar propriedades aninhadas.
+function extractAccessUri(parResponse) {
+  const entry = parResponse && Array.isArray(parResponse.parList) ? parResponse.parList[0] : null;
+  if (!entry || !isValidString(entry.accessUri)) {
+    throw new Error('Resposta do FTS inválida: accessUri ausente em parList[0]');
+  }
+  return entry.accessUri;
 }
 
 async function getAccessToken(envKey = currentEnv) {
@@ -313,7 +334,7 @@ app.get('/ping', async (req, res) => {
     await ftsRequest('GET', 'ping');
     res.json({ status: 'Success' });
   } catch (e) {
-    res.status(500).json({ status: 'Failure', error: e.message });
+    sendUpstreamError(req, res, e, 'Falha ao verificar a conectividade com o serviço de armazenamento');
   }
 });
 
@@ -327,7 +348,7 @@ app.get('/prefixes', async (req, res) => {
     const data = await ftsRequest('GET', 'listprefixes');
     res.json(data);
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    sendUpstreamError(req, res, e, 'Falha ao listar os prefixos');
   }
 });
 
@@ -340,7 +361,7 @@ app.get('/files', async (req, res) => {
     const data = await ftsRequest('GET', `listfiles?prefix=${encodeURIComponent(prefix)}`);
     res.json(data);
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    sendUpstreamError(req, res, e, 'Falha ao listar os arquivos');
   }
 });
 
@@ -354,9 +375,9 @@ app.post('/upload', async (req, res) => {
     const parResponse = await ftsRequest('POST', 'upload', {
       listOfFiles: [{ storagePrefix: prefix, fileName: remoteName }]
     });
-    res.json({ accessUri: parResponse.parList[0].accessUri });
+    res.json({ accessUri: extractAccessUri(parResponse) });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    sendUpstreamError(req, res, e, 'Falha ao preparar o upload do arquivo');
   }
 });
 
@@ -381,7 +402,7 @@ app.delete('/delete', async (req, res) => {
     await ftsRequest('DELETE', 'delete', payload);
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    sendUpstreamError(req, res, e, 'Falha ao excluir os arquivos');
   }
 });
 
@@ -399,27 +420,26 @@ app.post('/download', async (req, res) => {
     const parResponse = await ftsRequest('POST', 'download', {
       listOfFiles: [{ storagePrefix: prefix, fileName: relativeName }]
     });
-    res.json({ accessUri: parResponse.parList[0].accessUri });
+    res.json({ accessUri: extractAccessUri(parResponse) });
   } catch (e) {
-    console.error(`[Download Error] ${e.message}`);
-    res.status(500).json({ error: e.message });
+    sendUpstreamError(req, res, e, 'Falha ao preparar o download do arquivo');
   }
 });
 
 // Rota não encontrada
 app.use((req, res) => {
-  res.status(404).json({ error: 'Rota não encontrada' });
+  res.status(404).json({ error: 'Rota não encontrada', requestId: req.id });
 });
 
 // Middleware global de erros
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   const status = err.status || err.statusCode || 500;
-  console.error('[ErrorHandler] Erro não tratado:', err?.message || err);
+  console.error(`[ErrorHandler] ${req.id} Erro não tratado:`, err?.message || err);
   if (status >= 500) {
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ error: 'Erro interno do servidor', requestId: req.id });
   } else {
-    res.status(status).json({ error: 'Erro na requisição' });
+    res.status(status).json({ error: 'Erro na requisição', requestId: req.id });
   }
 });
 
