@@ -37,4 +37,5 @@ jobs:
           exit 1
       - run: npm install --prefix frontend
       - run: npm run lint --prefix frontend
+      - run: npm test --prefix frontend
       - run: npm run build:frontend
