@@ -63,25 +63,20 @@ interface-os-ora-cloud/
 ## 🚀 Como Executar
 
 ### 1. Pré-requisitos
-- **Node.js** (v18 ou superior)
+- **Node.js** `^22.12.0` ou `>=24.0.0` (exigido pelo Vite 7 / Vitest 5)
 - **npm** (v9 ou superior)
 
 ### 2. Instalação das Dependências
 
-Você pode instalar tudo diretamente da raiz:
+O projeto usa **npm workspaces**. Instale tudo com um único comando, a partir da raiz:
 ```bash
-npm run install:all
-```
-Ou individualmente em cada pasta:
-```bash
-# Backend
-cd backend
 npm install
+```
+> Atalho equivalente: `npm run install:all`.
 
-# Frontend
-cd ../frontend
-npm install
-```
+Isso cria um único `node_modules/` na raiz, compartilhado por `backend/` e `frontend/`. Não é necessário (nem recomendado) rodar `npm install` dentro de cada pasta.
+
+> **npm 11.19+:** se o `npm install` falhar com `EALLOWSCRIPTS`/`allow-scripts is not allowed in project-scoped installs`, remova a chave `allow-scripts` do seu `~/.npmrc` (ou mova-a para o campo `allowScripts` do `package.json`). Esse erro vem de configuração global, não do projeto.
 
 ### 3. Configuração de Ambiente
 

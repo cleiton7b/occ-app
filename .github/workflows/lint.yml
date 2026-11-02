@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm install --prefix backend
+      - run: npm ci
       - run: npm run lint --prefix backend
       - run: node --check backend/server.js
       - run: npm test --prefix backend
